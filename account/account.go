@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/rpc"
 	"strings"
 	"time"
 
@@ -61,7 +62,7 @@ func (a *Account) ViewState(ctx context.Context, opts ...ViewStateOption) (*Acco
 		)
 	}
 	var res AccountStateView
-	if err := a.config.RPCClient.CallContext(ctx, &res, "query", util.NewNamedParams(req)); err != nil {
+	if err := a.config.RPCClient.CallContext(ctx, &res, "query", rpc.NewNamedParams(req)); err != nil {
 		return nil, fmt.Errorf("calling rpc: %v", util.MapRPCError(err))
 	}
 	return &res, nil
@@ -91,7 +92,7 @@ func (a *Account) State(
 		)
 	}
 	var res AccountView
-	if err := a.config.RPCClient.CallContext(ctx, &res, "query", util.NewNamedParams(req)); err != nil {
+	if err := a.config.RPCClient.CallContext(ctx, &res, "query", rpc.NewNamedParams(req)); err != nil {
 		return nil, fmt.Errorf("calling rpc: %v", util.MapRPCError(err))
 	}
 	return &res, nil
@@ -147,7 +148,7 @@ func (a *Account) ViewAccessKey(ctx context.Context, pubKey *keys.PublicKey) (*A
 	resp := &viewAccessKeyResp{Permission: &raw}
 
 	// var res AccessKeyView
-	if err := a.config.RPCClient.CallContext(ctx, &resp, "query", util.NewNamedParams(req)); err != nil {
+	if err := a.config.RPCClient.CallContext(ctx, &resp, "query", rpc.NewNamedParams(req)); err != nil {
 		return nil, fmt.Errorf("calling rpc: %v", util.MapRPCError(err))
 	}
 	if resp.Error != "" {
@@ -198,7 +199,7 @@ func (a *Account) SignTransaction(
 		ctx,
 		&res,
 		"block",
-		util.NewNamedParams(itypes.BlockRequest{Finality: "final"}),
+		rpc.NewNamedParams(itypes.BlockRequest{Finality: "final"}),
 	); err != nil {
 		return nil, nil, fmt.Errorf("calling block rpc: %v", util.MapRPCError(err))
 	}

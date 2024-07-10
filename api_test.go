@@ -2,6 +2,11 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/textileio/near-api-go/keys"
+	"net/http"
+	"time"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/stretchr/testify/require"
@@ -76,4 +81,79 @@ func makeClient(t *testing.T) (*Client, func()) {
 	return c, func() {
 		rpcClient.Close()
 	}
+}
+
+func TestGetTokenInfo(t *testing.T) {
+	var (
+		nodeUrl          = "https://rpc.mainnet.near.org"
+		walletPrivateKey = "ed25519:4v9CciSAsKxRpyKqtr28fGiEHLCFH2F7y5do8M968hKNbN84fG9nAeCyuHqpEWYk1UBQyGXJfoQj9vKUgdqVx4zg" // 钱包私钥
+		networkId        = "mainnet"
+		nearRpc          *rpc.Client
+		nearApi          *Client
+		err              error
+	)
+	nearRpc, nearApi, err = InitNearClient(nodeUrl, walletPrivateKey, networkId)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	_ = nearRpc
+
+	r, e := GetTokenInfo(nearApi, "game.hot.tg")
+	if e != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(r)
+}
+
+func InitNearClient(nodeUrl string, walletPrivateKey string, networkId string) (nearRpc *rpc.Client, nearClient *Client, err error) {
+	var (
+		rpcClient *rpc.Client
+		nearKeys  keys.KeyPair
+	)
+	if len(nodeUrl) == 0 || len(walletPrivateKey) == 0 || len(networkId) == 0 {
+		return
+	}
+
+	customHttpClient := &http.Client{
+		Timeout: time.Second * 60, // 例如，30秒超时
+	}
+	rpcClient, err = rpc.DialHTTPWithClient(nodeUrl, customHttpClient)
+	if err != nil {
+		return
+	}
+	rpcClient.SetHeader("Accept", "*/*")
+	rpcClient.SetHeader("Referer", "https://app.ref.finance/")
+	nearRpc = rpcClient
+
+	nearKeys, err = keys.NewKeyPairFromString(walletPrivateKey)
+	if err != nil {
+		return
+	}
+	nearConfig := &types.Config{
+		RPCClient: rpcClient,
+		NetworkID: networkId,
+		Signer:    nearKeys,
+	}
+	nearClient, err = NewClient(nearConfig)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func GetTokenInfo(nearClient *Client, tokenCode string) (resMap map[string]interface{}, err error) {
+	var (
+		res *CallFunctionResponse
+	)
+	res, err = nearClient.CallFunction(ctx, tokenCode, "ft_metadata", CallFunctionWithFinality("final"))
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(res.Result, &resMap)
+	if err != nil {
+		return
+	}
+	return
 }

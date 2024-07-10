@@ -8,16 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 )
 
-// NewNamedParams is a qucick way to create NamedParams.
-func NewNamedParams(argsObject interface{}) NamedParams {
-	return NamedParams{Value: argsObject}
-}
-
-// NamedParams wraps a struct or map value to provide RPC params as an object.
-type NamedParams struct {
-	Value interface{}
-}
-
 // MapRPCError converts a RPC error with nested informatoin to a error with a useful and complete message.
 func MapRPCError(rpcErr error) error {
 	if e, ok := rpcErr.(rpc.DataError); ok {
